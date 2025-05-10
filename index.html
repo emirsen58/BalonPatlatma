@@ -4,7 +4,113 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lazer Balon Patlatma Oyunu</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to top, #e0c3fc, #8ec5fc);
+      overflow: hidden;
+    }
+
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    #scoreboard {
+      position: absolute;
+      width: 100%;
+      top: 10px;
+      display: flex;
+      justify-content: space-around;
+      font-size: 20px;
+      font-weight: bold;
+      z-index: 5;
+      color: #222;
+    }
+
+    #game-area {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #gun {
+      width: 60px;
+      height: 30px;
+      background-color: #444;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 10px;
+    }
+
+    .laser {
+      width: 4px;
+      height: 20px;
+      background-color: red;
+      position: absolute;
+      bottom: 40px;
+      animation: shootUp 1s linear forwards;
+    }
+
+    @keyframes shootUp {
+      0% { bottom: 40px; }
+      100% { bottom: 100%; }
+    }
+
+    .balloon {
+      width: 40px;
+      height: 50px;
+      border-radius: 50%;
+      position: absolute;
+      animation: floatUp 6s linear forwards;
+    }
+
+    @keyframes floatUp {
+      0% { top: 100%; }
+      100% { top: -60px; }
+    }
+
+    .balloon.red { background-color: #ff4b5c; }
+    .balloon.gold { background-color: gold; }
+    .balloon.black { background-color: black; }
+
+    #game-over {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+      text-align: center;
+    }
+
+    #game-over button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #ff4081;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: white;
+    }
+  </style>
 </head>
 <body>
   <div id="game-container">
@@ -25,6 +131,136 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const gun = document.getElementById("gun");
+    const gameArea = document.getElementById("game-area");
+    const scoreSpan = document.getElementById("score");
+    const timeSpan = document.getElementById("time");
+    const gameOverScreen = document.getElementById("game-over");
+    const finalScoreSpan = document.getElementById("final-score");
+    const bestScoreSpan = document.getElementById("best-score");
+    const restartBtn = document.getElementById("restart-btn");
+
+    let score = 0;
+    let timeLeft = 60;
+    let gameInterval;
+    let spawnInterval;
+
+    gameArea.addEventListener("mousemove", (e) => {
+      const rect = gameArea.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      gun.style.left = `${mouseX}px`;
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") shootLaser();
+    });
+    gameArea.addEventListener("click", shootLaser);
+
+    function shootLaser() {
+      const laser = document.createElement("div");
+      laser.classList.add("laser");
+
+      const gunRect = gun.getBoundingClientRect();
+      const areaRect = gameArea.getBoundingClientRect();
+      const left = gunRect.left - areaRect.left + gun.offsetWidth / 2 - 2;
+
+      laser.style.left = `${left}px`;
+      gameArea.appendChild(laser);
+
+      const laserInterval = setInterval(() => {
+        const laserTop = laser.offsetTop;
+        const balloons = document.querySelectorAll(".balloon");
+
+        balloons.forEach((balloon) => {
+          if (isColliding(laser, balloon)) {
+            const type = balloon.dataset.type;
+            if (type === "red") score += 1;
+            else if (type === "gold") score += 5;
+            else if (type === "black") score -= 3;
+
+            scoreSpan.textContent = score;
+            balloon.remove();
+            laser.remove();
+          }
+        });
+
+        if (laserTop < -20) {
+          laser.remove();
+          clearInterval(laserInterval);
+        }
+      }, 10);
+    }
+
+    function spawnBalloon() {
+      const balloon = document.createElement("div");
+      balloon.classList.add("balloon");
+
+      const types = ["red", "gold", "black"];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      balloon.classList.add(type);
+      balloon.dataset.type = type;
+
+      const left = Math.random() * (gameArea.offsetWidth - 40);
+      balloon.style.left = `${left}px`;
+
+      gameArea.appendChild(balloon);
+
+      setTimeout(() => {
+        if (balloon.parentElement) balloon.remove();
+      }, 6000);
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 60;
+      scoreSpan.textContent = score;
+      timeSpan.textContent = timeLeft;
+      gameOverScreen.style.display = "none";
+
+      gameInterval = setInterval(() => {
+        timeLeft--;
+        timeSpan.textContent = timeLeft;
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+
+      spawnInterval = setInterval(spawnBalloon, 800);
+    }
+
+    function isColliding(a, b) {
+      const aRect = a.getBoundingClientRect();
+      const bRect = b.getBoundingClientRect();
+
+      return !(
+        aRect.top > bRect.bottom ||
+        aRect.bottom < bRect.top ||
+        aRect.right < bRect.left ||
+        aRect.left > bRect.right
+      );
+    }
+
+    function endGame() {
+      clearInterval(gameInterval);
+      clearInterval(spawnInterval);
+
+      document.querySelectorAll(".laser").forEach((l) => l.remove());
+      document.querySelectorAll(".balloon").forEach((b) => b.remove());
+
+      gameOverScreen.style.display = "flex";
+      finalScoreSpan.textContent = score;
+
+      const best = localStorage.getItem("bestScore") || 0;
+      if (score > best) {
+        localStorage.setItem("bestScore", score);
+      }
+
+      bestScoreSpan.textContent = localStorage.getItem("bestScore");
+    }
+
+    restartBtn.addEventListener("click", startGame);
+
+    window.onload = startGame;
+  </script>
 </body>
 </html>
