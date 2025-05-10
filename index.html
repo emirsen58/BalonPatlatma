@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lazer Balon Patlatma Oyunu</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game-container">
+    <div id="scoreboard">
+      <div>Skor: <span id="score">0</span></div>
+      <div>Süre: <span id="time">60</span>s</div>
+    </div>
+
+    <div id="game-area">
+      <div id="gun"></div>
+    </div>
+
+    <div id="game-over">
+      <h2>Oyun Bitti</h2>
+      <p>Skorun: <span id="final-score"></span></p>
+      <p>En İyi Skor: <span id="best-score"></span></p>
+      <button id="restart-btn">Tekrar Oyna</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
